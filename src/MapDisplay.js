@@ -11,43 +11,61 @@ class MapDisplay extends Component {
         showingInfoWindow: false,
         activeMarker: null,
         activeMarkerProps: null,
-        markers: []
+        markers: [],
+        firstDrop: true
     };
 
     componentDidMount = () => {
         this.updateMarkers(this.props.locations);
     }
 
-    componentWillUpate = (props) => {
-        this.updateMarkers(this.props.locations);
+    componentWillReceiveProps = (props) => {
+        this.setState({firstDrop: false});
+
+        if (this.state.markers.length !== props.locations.length) {
+            this.closeInfoWindow();
+            this.updateMarkers(props.locations);
+        }
+
+        if (!props.selectedIndex || (this.state.activeMarker && 
+            (this.state.markers[props.selectedIndex] !== this.state.activeMarker.index))) {
+
+            this.closeInfoWindow();
+            return;
+        }
+        console.log("outside marker selection: ", this.state.markers[props.selectedIndex]);
     }
 
     updateMarkers = (locations) => {
+        this.closeInfoWindow();
+
         if (!locations) 
             return;
+        
+        let markerProps = [];
         let markers = locations.map((location, index) => {
+            markerProps.push({key: index, index, name: location.name, 
+                position: location.pos, url: location.url});
             return (<Marker
                 key={index}
                 index={index}
                 name={location.name}
                 position={location.pos}
                 url={location.url}
-                onClick={this.onMarkerClick}/>)
+                onClick={this.onMarkerClick}
+                animation={ this.state.firstDrop ? this.props.google.maps.Animation.DROP : null}/>)
         })
 
-        this.setState({markers: markers});
+        this.setState({markers: markers, markerProps});
     }
 
     onMarkerClick = (props, marker, e) => {
-        // Stop animating any already active marker
-        this.state.activeMarker && this
-            .state
-            .activeMarker
-            .setAnimation(null);
+        console.log("marker selection: ", marker);
 
-        // Fetch the Yelp data for the selected restaurant
+        this.closeInfoWindow();
+
+        // Fetch the FourSquare data for the selected restaurant
         let url = `https://api.foursquare.com/v2/venues/search?client_id=${FS_CLIENT}&client_secret=${FS_SECRET}&v=${FS_VERSION}&radius=100&ll=${props.position.lat},${props.position.lng}&llAcc=100`;
-        console.log("url: ", url);
         let headers = new Headers();
         let request = new Request(url, {
             method: 'GET',
@@ -108,6 +126,11 @@ class MapDisplay extends Component {
         this.setState({showingInfoWindow: false, activeMarker: null, activeMarkerProps: null});
     }
 
+    checkMapProps = (props, map) => {
+        console.log("map props: ", props);
+        console.log("map: ", map);
+    }
+
     render = () => {
         const style = {
             width: '100%',
@@ -121,6 +144,7 @@ class MapDisplay extends Component {
 
         return (
             <Map
+                onReady={this.checkMapProps}
                 google={this.props.google}
                 zoom={this.props.zoom}
                 style={style}

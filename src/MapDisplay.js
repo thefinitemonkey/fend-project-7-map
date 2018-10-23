@@ -1,6 +1,11 @@
 import React, {Component} from 'react';
 import {Map, InfoWindow, Marker, GoogleApiWrapper} from 'google-maps-react';
+import NoMapDisplay from './NoMapDisplay';
 
+const MAP_KEY = "AIzaSyBSf2q0a4Umr65w17nKsfLOl6L99Vj2DsQ";
+const FS_CLIENT = "IGXZG543B3RW4HHAD1XVVWK03Y2JU3M3KIOTZ2KEMJH5BEUF";
+const FS_SECRET = "3VKMH02ZDPJKMJIO5EEFJKJ3JCKO22SJAAOCPYGRBJHKVXVF";
+const FS_VERSION = "20180323";
 class MapDisplay extends Component {
     state = {
         showingInfoWindow: false,
@@ -8,21 +13,33 @@ class MapDisplay extends Component {
         activeMarkerProps: null
     };
 
+    componentDidMount = () => {
+        console.log("mounted google: ", this.props.google);
+    }
+
     componentDidUpate = (props) => {
         console.log("update props: ", props);
     }
 
     onMarkerClick = (props, marker, e) => {
+        // Stop animating any already active marker
+        this.state.activeMarker && this
+            .state
+            .activeMarker
+            .setAnimation(null);
+
         console.log("marker props: ", props);
 
         // Fetch the Yelp data for the selected restaurant
-        let url = `https://api.foursquare.com/v2/venues/search?client_id=IGXZG543B3RW4HHAD1XVVWK03Y2JU3M3KIOTZ2KEMJH5BEUF&client_secret=3VKMH02ZDPJKMJIO5EEFJKJ3JCKO22SJAAOCPYGRBJHKVXVF&v=20180323&radius=50&ll=${props.position.lat},${props.position.lng}&llAcc=100`;
+        let url = `https://api.foursquare.com/v2/venues/search?client_id=${FS_CLIENT}&client_secret=${FS_SECRET}&v=${FS_VERSION}&radius=100&ll=${props.position.lat},${props.position.lng}&llAcc=100`;
         console.log("url: ", url);
         let headers = new Headers();
         let request = new Request(url, {
             method: 'GET',
             headers
         });
+
+        // Create props for the active marker
         let activeMarkerProps;
         fetch(request)
             .then(response => response.json())
@@ -36,22 +53,23 @@ class MapDisplay extends Component {
                 };
                 console.log("props with FourSquare: ", activeMarkerProps);
 
-                // Get the list of images for the restaurant if we got FourSquare data
+                // Get the list of images for the restaurant if we got FourSquare data, or just
+                // finishing setting state with the data we have
                 if (activeMarkerProps.foursquare) {
-                let url = `https://api.foursquare.com/v2/venues/${restaurant[0].id}/photos?client_id=IGXZG543B3RW4HHAD1XVVWK03Y2JU3M3KIOTZ2KEMJH5BEUF&client_secret=3VKMH02ZDPJKMJIO5EEFJKJ3JCKO22SJAAOCPYGRBJHKVXVF&v=20180323`;
-                fetch(url)
-                    .then(response => response.json())
-                    .then(result => {
-                        activeMarkerProps = {
-                            ...activeMarkerProps,
-                            images: result.response.photos
-                        };
-                        if (this.state.activeMarker) 
-                            this.state.activeMarker.setAnimation(null);
-                        marker.setAnimation(this.props.google.maps.Animation.BOUNCE);
-                        this.setState({showingInfoWindow: true, activeMarker: marker, activeMarkerProps});
-                        console.log("props with images: ", activeMarkerProps);
-                    })
+                    let url = `https://api.foursquare.com/v2/venues/${restaurant[0].id}/photos?client_id=${FS_CLIENT}&client_secret=${FS_SECRET}&v=${FS_VERSION}`;
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(result => {
+                            activeMarkerProps = {
+                                ...activeMarkerProps,
+                                images: result.response.photos
+                            };
+                            if (this.state.activeMarker) 
+                                this.state.activeMarker.setAnimation(null);
+                            marker.setAnimation(this.props.google.maps.Animation.BOUNCE);
+                            this.setState({showingInfoWindow: true, activeMarker: marker, activeMarkerProps});
+                            console.log("props with images: ", activeMarkerProps);
+                        })
                 } else {
                     marker.setAnimation(this.props.google.maps.Animation.BOUNCE);
                     this.setState({showingInfoWindow: true, activeMarker: marker, activeMarkerProps});
@@ -60,6 +78,8 @@ class MapDisplay extends Component {
     }
 
     getBusinessInfo = (props, data) => {
+        // Look for matching restaurant data in FourSquare compared to what we already
+        // know
         console.log("foursquare data: ", data);
         return data
             .response
@@ -68,6 +88,7 @@ class MapDisplay extends Component {
     }
 
     closeInfoWindow = () => {
+        // Disable any active marker animation
         this.state.activeMarker && this
             .state
             .activeMarker
@@ -76,6 +97,7 @@ class MapDisplay extends Component {
     }
 
     render = () => {
+        console.log("google: ", this.props.google);
         const style = {
             width: '100%',
             height: '100%'
@@ -115,10 +137,13 @@ class MapDisplay extends Component {
                             )
                             : ""}
                         {amProps && amProps.images
-                            ? (<div><img alt={amProps.name + " food picture"}
-                                src={amProps.images.items[0].prefix + "100x100" + amProps.images.items[0].suffix}/></div>)
+                            ? (
+                                <div><img
+                                    alt={amProps.name + " food picture"}
+                                    src={amProps.images.items[0].prefix + "100x100" + amProps.images.items[0].suffix}/></div>
+                            )
                             : ""
-}
+                        }
                     </div>
                 </InfoWindow>
             </Map>
@@ -126,4 +151,4 @@ class MapDisplay extends Component {
     }
 }
 
-export default GoogleApiWrapper({apiKey: "AIzaSyBSf2q0a4Umr65w17nKsfLOl6L99Vj2DsQ"})(MapDisplay)
+export default GoogleApiWrapper({apiKey: MAP_KEY, LoadingContainer: NoMapDisplay})(MapDisplay)

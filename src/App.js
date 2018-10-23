@@ -8,11 +8,15 @@ class App extends Component {
     lat: 29.7844913,
     lon: -95.7800231,
     zoom: 13,
-    all: locations
+    all: locations,
+    mapScriptAvailable: true
   }
 
   componentDidMount = () => {
-    this.setState({...this.state, filtered: this.filterLocations(this.state.all, "")});
+    this.setState({
+      ...this.state,
+      filtered: this.filterLocations(this.state.all, "")
+    });  
   }
 
   filterLocations = (locations, query) => {
@@ -20,6 +24,7 @@ class App extends Component {
   }
 
   render = () => {
+    console.log("mapScriptAvailable: ", this.state.mapScriptAvailable);
     return (
       <div className="App">
         <MapDisplay

@@ -10,15 +10,32 @@ class MapDisplay extends Component {
     state = {
         showingInfoWindow: false,
         activeMarker: null,
-        activeMarkerProps: null
+        activeMarkerProps: null,
+        markers: []
     };
 
     componentDidMount = () => {
-        console.log("mounted google: ", this.props.google);
+        this.updateMarkers(this.props.locations);
     }
 
-    componentDidUpate = (props) => {
-        console.log("update props: ", props);
+    componentWillUpate = (props) => {
+        this.updateMarkers(this.props.locations);
+    }
+
+    updateMarkers = (locations) => {
+        if (!locations) 
+            return;
+        let markers = locations.map((location, index) => {
+            return (<Marker
+                key={index}
+                index={index}
+                name={location.name}
+                position={location.pos}
+                url={location.url}
+                onClick={this.onMarkerClick}/>)
+        })
+
+        this.setState({markers: markers});
     }
 
     onMarkerClick = (props, marker, e) => {
@@ -27,8 +44,6 @@ class MapDisplay extends Component {
             .state
             .activeMarker
             .setAnimation(null);
-
-        console.log("marker props: ", props);
 
         // Fetch the Yelp data for the selected restaurant
         let url = `https://api.foursquare.com/v2/venues/search?client_id=${FS_CLIENT}&client_secret=${FS_SECRET}&v=${FS_VERSION}&radius=100&ll=${props.position.lat},${props.position.lng}&llAcc=100`;
@@ -51,7 +66,6 @@ class MapDisplay extends Component {
                     ...props,
                     foursquare: restaurant[0]
                 };
-                console.log("props with FourSquare: ", activeMarkerProps);
 
                 // Get the list of images for the restaurant if we got FourSquare data, or just
                 // finishing setting state with the data we have
@@ -68,7 +82,6 @@ class MapDisplay extends Component {
                                 this.state.activeMarker.setAnimation(null);
                             marker.setAnimation(this.props.google.maps.Animation.BOUNCE);
                             this.setState({showingInfoWindow: true, activeMarker: marker, activeMarkerProps});
-                            console.log("props with images: ", activeMarkerProps);
                         })
                 } else {
                     marker.setAnimation(this.props.google.maps.Animation.BOUNCE);
@@ -80,7 +93,6 @@ class MapDisplay extends Component {
     getBusinessInfo = (props, data) => {
         // Look for matching restaurant data in FourSquare compared to what we already
         // know
-        console.log("foursquare data: ", data);
         return data
             .response
             .venues
@@ -97,7 +109,6 @@ class MapDisplay extends Component {
     }
 
     render = () => {
-        console.log("google: ", this.props.google);
         const style = {
             width: '100%',
             height: '100%'
@@ -115,16 +126,7 @@ class MapDisplay extends Component {
                 style={style}
                 initialCenter={center}
                 onClick={this.closeInfoWindow}>
-                {this
-                    .props
-                    .locations
-                    .map((location, index) => <Marker
-                        key={index}
-                        index={index}
-                        name={location.name}
-                        position={location.pos}
-                        url={location.url}
-                        onClick={this.onMarkerClick}/>)}
+                {this.state.markers}
                 <InfoWindow
                     marker={this.state.activeMarker}
                     visible={this.state.showingInfoWindow}
@@ -143,7 +145,7 @@ class MapDisplay extends Component {
                                     src={amProps.images.items[0].prefix + "100x100" + amProps.images.items[0].suffix}/></div>
                             )
                             : ""
-                        }
+}
                     </div>
                 </InfoWindow>
             </Map>

@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Map, InfoWindow, Marker, GoogleApiWrapper} from 'google-maps-react';
+import {Map, InfoWindow, GoogleApiWrapper} from 'google-maps-react';
 import NoMapDisplay from './NoMapDisplay';
 
 const MAP_KEY = "AIzaSyBSf2q0a4Umr65w17nKsfLOl6L99Vj2DsQ";
@@ -22,7 +22,6 @@ class MapDisplay extends Component {
 
     componentWillReceiveProps = (props) => {
         this.setState({firstDrop: false});
-        console.log("received props: ", props);
 
         // Change in the number of locations, so update the markers
         if (this.state.markers.length !== props.locations.length) {
@@ -30,7 +29,6 @@ class MapDisplay extends Component {
             this.updateMarkers(props.locations);
             this.setState({activeMarker: null});
 
-            console.log("returned because different locations list");
             return;
         }
 
@@ -42,12 +40,10 @@ class MapDisplay extends Component {
 
         // Make sure there's a selected index
         if (props.selectedIndex === null) {
-            console.log("returned because invalid index");
             return;
         };
 
         // Treat the marker as clicked
-        console.log("outside marker selection: ", this.state.markers[props.selectedIndex]);
         this.onMarkerClick(this.state.markerProps[props.selectedIndex], this.state.markers[props.selectedIndex]);
     }
 

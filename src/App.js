@@ -27,6 +27,9 @@ class App extends Component {
     },
     hide: {
       display: 'none'
+    },
+    header: {
+      marginTop: "0px"
     }
   };
 
@@ -66,7 +69,7 @@ class App extends Component {
   render = () => {
     return (
       <div className="App">
-        <div>        
+        <div style={this.styles.header}>        
           <button onClick={this.toggleDrawer} style={this.styles.menuButton}>
             <i className="fa fa-bars"></i>
           </button>

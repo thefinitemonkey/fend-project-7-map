@@ -16,3 +16,5 @@ A list of Mexican restaurants in the Katy, TX area has been created. These locat
 * Clone this repo from https://github.com/thefinitemonkey/fend-project-7-map
 * Run `npm install`
 * Run `npm start`
+
+Note that the default service worker is used in this app (bootstrapped with create-react-app) and so only works in production build.

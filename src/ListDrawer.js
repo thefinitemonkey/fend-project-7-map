@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import Drawer from '@material-ui/core/Drawer';
 
 class ListDrawer extends Component {
@@ -23,7 +23,8 @@ class ListDrawer extends Component {
             marginBottom: "15px"
         },
         listLink: {
-            textDecoration: "none",
+            background: "transparent",
+            border: "none",
             color: "black"
         },
         filterEntry: {
@@ -35,7 +36,9 @@ class ListDrawer extends Component {
     };
 
     updateQuery = (newQuery) => {
-        this.setState({query: newQuery});
+        // Save the new query string in state and pass the string
+        // up the call tree
+        this.setState({ query: newQuery });
         this.props.filterLocations(newQuery);
     }
 
@@ -50,8 +53,8 @@ class ListDrawer extends Component {
                             placeholder="Filter list"
                             name="filter"
                             onChange={e => this
-                            .updateQuery(e.target.value)}
-                            value={this.state.query}/>
+                                .updateQuery(e.target.value)}
+                            value={this.state.query} />
                         <ul style={this.styles.noBullets}>
                             {this.props.locations && this
                                 .props
@@ -59,7 +62,7 @@ class ListDrawer extends Component {
                                 .map((location, index) => {
                                     return (
                                         <li style={this.styles.listItem} key={index}>
-                                            <button key={index} onClick={e => this.props.clickListItem(index)}>{location.name}</button>
+                                            <button style={this.styles.listLink} key={index} onClick={e => this.props.clickListItem(index)}>{location.name}</button>
                                         </li>
                                     )
                                 })}

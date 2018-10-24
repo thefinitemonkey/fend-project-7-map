@@ -38,23 +38,28 @@ class App extends Component {
   }
 
   toggleDrawer = () => {
+    // Toggle the value controlling whether the drawer is displayed
     this.setState({
       open: !this.state.open
     });
   }
 
   updateQuery = (query) => {
+    // Update the query value and filter the list of locations accordingly
     this.setState({
       ...this.state,
+      selectedIndex: null,
       filtered: this.filterLocations(this.state.all, query)
     });
   }
 
   filterLocations = (locations, query) => {
+    // Filter locations to match query string
     return locations.filter(location => location.name.toLowerCase().includes(query.toLowerCase()));
   }
 
   clickListItem = (index) => {
+    // Set the state to reflect the selected location array index
     this.setState({selectedIndex: index, open: !this.state.open})
   }
 

@@ -12,56 +12,88 @@ class MapDisplay extends Component {
         activeMarker: null,
         activeMarkerProps: null,
         markers: [],
-        firstDrop: true
+        markerProps: [],
+        firstDrop: true,
+        map: null
     };
 
     componentDidMount = () => {
-        this.updateMarkers(this.props.locations);
     }
 
     componentWillReceiveProps = (props) => {
         this.setState({firstDrop: false});
+        console.log("received props: ", props);
 
+        // Change in the number of locations, so update the markers
         if (this.state.markers.length !== props.locations.length) {
             this.closeInfoWindow();
             this.updateMarkers(props.locations);
-        }
+            this.setState({activeMarker: null});
 
-        if (!props.selectedIndex || (this.state.activeMarker && 
-            (this.state.markers[props.selectedIndex] !== this.state.activeMarker.index))) {
-
-            this.closeInfoWindow();
+            console.log("returned because different locations list");
             return;
         }
+
+        // The selected item is not the same as the active marker, so close the info window
+        if (!props.selectedIndex || (this.state.activeMarker && 
+            (this.state.markers[props.selectedIndex] !== this.state.activeMarker))) {
+            this.closeInfoWindow();
+        }
+
+        // Make sure there's a selected index
+        if (props.selectedIndex === null) {
+            console.log("returned because invalid index");
+            return;
+        };
+
+        // Treat the marker as clicked
         console.log("outside marker selection: ", this.state.markers[props.selectedIndex]);
+        this.onMarkerClick(this.state.markerProps[props.selectedIndex], this.state.markers[props.selectedIndex]);
+    }
+
+    mapReady = (props, map) => {
+        // Save the map reference in state and prepare the location markers
+        this.setState({map});
+        this.updateMarkers(this.props.locations);
     }
 
     updateMarkers = (locations) => {
+        // Close any displayed info
         this.closeInfoWindow();
 
+        // If all the locations have been filtered then we're done
         if (!locations) 
             return;
+
+        // For any existing markers remove them from the map
+        this.state.markers.forEach(marker => marker.setMap(null));
         
+        // Iterate over the locations to create parallel references to marker properties and
+        // the markers themselves that can be used for reference in interactions. Add the
+        // markers to the map along the way.
         let markerProps = [];
         let markers = locations.map((location, index) => {
-            markerProps.push({key: index, index, name: location.name, 
-                position: location.pos, url: location.url});
-            return (<Marker
-                key={index}
-                index={index}
-                name={location.name}
-                position={location.pos}
-                url={location.url}
-                onClick={this.onMarkerClick}
-                animation={ this.state.firstDrop ? this.props.google.maps.Animation.DROP : null}/>)
+            let mProps = {key: index, index, name: location.name, 
+                position: location.pos, url: location.url};
+            markerProps.push(mProps);
+
+            let animation = this.state.firstDrop ? this.props.google.maps.Animation.DROP : null;
+            let marker = new this.props.google.maps.Marker({
+                position: location.pos,
+                map: this.state.map,
+                animation
+            });
+            marker.addListener('click', () => {
+                this.onMarkerClick(mProps, marker, null);
+            })
+            return marker;
         })
 
-        this.setState({markers: markers, markerProps});
+        this.setState({markers, markerProps});
     }
 
     onMarkerClick = (props, marker, e) => {
-        console.log("marker selection: ", marker);
-
+        // Close any info window already open
         this.closeInfoWindow();
 
         // Fetch the FourSquare data for the selected restaurant
@@ -126,11 +158,6 @@ class MapDisplay extends Component {
         this.setState({showingInfoWindow: false, activeMarker: null, activeMarkerProps: null});
     }
 
-    checkMapProps = (props, map) => {
-        console.log("map props: ", props);
-        console.log("map: ", map);
-    }
-
     render = () => {
         const style = {
             width: '100%',
@@ -144,13 +171,12 @@ class MapDisplay extends Component {
 
         return (
             <Map
-                onReady={this.checkMapProps}
+                onReady={this.mapReady}
                 google={this.props.google}
                 zoom={this.props.zoom}
                 style={style}
                 initialCenter={center}
                 onClick={this.closeInfoWindow}>
-                {this.state.markers}
                 <InfoWindow
                     marker={this.state.activeMarker}
                     visible={this.state.showingInfoWindow}
